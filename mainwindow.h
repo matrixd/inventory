@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QList>
 #include <QStandardItemModel>
+#include <QStandardItem>
 
 namespace Ui {
 class MainWindow;
@@ -18,20 +19,18 @@ public:
     ~MainWindow();
 
 private:
-    class Item{
-    public:
-        unsigned int page;
-        QString name;
-    };
-
     Ui::MainWindow *ui;
-    QList<Item>* items;
+    QStandardItemModel* lstModel;
     QStandardItemModel* itemsModel;
 
-    void addItem(QString it);
+    void addToLst(QString it);
     void readAll(QString fname);
 private slots:
-    void generateTable();
+    void add();
+    void saveAll();
+    void proccessItem(QStandardItem* it);
+    void checkItem(QStandardItem* it);
+    void print();
 };
 
 #endif // MAINWINDOW_H
