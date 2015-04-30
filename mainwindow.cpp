@@ -58,7 +58,7 @@ void MainWindow::readAll(QString fname)
 
     while((!fl.atEnd())){
         QByteArray str = fl.readLine();
-        addToLst(QString(str));
+        addToLst(QString(str).remove("\n"));
     }
     fl.close();
 }
@@ -66,11 +66,11 @@ void MainWindow::readAll(QString fname)
 void MainWindow::saveAll()
 {
     QFile fl("lst.txt");
-    if(!fl.open(QIODevice::WriteOnly | QIODevice::Text))
+    if(!fl.open(QFile::WriteOnly))
         return;
 
     for(int row = 0; row != itemsModel->rowCount(); row++)
-        fl.write(itemsModel->item(row)->text().toUtf8());
+        fl.write(itemsModel->item(row)->text().toUtf8()+'\n');
 
     fl.close();
 }
@@ -122,6 +122,12 @@ void MainWindow::checkItem(QStandardItem *it)
 
 void MainWindow::print()
 {
+    QFile begin("begin.html");
+    QFile end("end.html");
+
+    if(!begin.open(QFile::ReadOnly) || !end.open(QFile::ReadOnly))
+        return;
+
     QPrinter printer;
     printer.setPageSize(QPrinter::A4);
     QPrintDialog dialog(&printer, this);
@@ -130,23 +136,18 @@ void MainWindow::print()
         return;
     }
 
-    qDebug() << "print";
-    QString html = "<html>\n<head><style type=\"text/css\">body{font-size: 18px;}</style></head>\n<body>\n";
-    html += "<h2>Внутренняя опись</h2>\n<br>\n";
-    html += "<table cellspacing=0 cellpadding = 2 style='border-width: 1px; border-style: solid; border-color: #000000'>\n";
-    /*QList<QStandardItem*> lst = itemsModel->findItems("\*",Qt::MatchRegExp);
-    qDebug() << lst.size();
-    for(QList<QStandardItem*>::iterator it = lst.begin(); it != lst.end(); it++){
-        qDebug() << (*it)->text();
-    }*/
+    QString html;
+    html = begin.readAll();
+    begin.close();
     for(int row = 0; row != itemsModel->rowCount(); row++){
         html += "    <tr><td>";
-        html += itemsModel->item(row)->text().remove("\n");
+        html += itemsModel->item(row)->text();
         html += "</td><td>";
         html += itemsModel->item(row,1)->text();
         html += "</td></tr>\n";
     }
-    html += "</table>\n</body>\n</html>";
+    html += end.readAll();
+    end.close();
     qDebug() << html;
     QTextDocument *document = new QTextDocument();
     document->setHtml(html);
