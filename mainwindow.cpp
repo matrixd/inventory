@@ -15,18 +15,22 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    lstModel = new QStandardItemModel(0,2,this);
+    lstModel = new QStandardItemModel(0,3,this);
     QStandardItem* it = new QStandardItem("Наименование");
     lstModel->setHorizontalHeaderItem(0,it);
-    it = new QStandardItem("Страница");
+    it = new QStandardItem("Страница(с)");
     lstModel->setHorizontalHeaderItem(1,it);
+    it = new QStandardItem("Страница(до)");
+    lstModel->setHorizontalHeaderItem(2,it);
     ui->tableView->setModel(lstModel);
 
-    itemsModel = new QStandardItemModel(0,2,this);
+    itemsModel = new QStandardItemModel(0,3,this);
     it = new QStandardItem("Наименование");
-    lstModel->setHorizontalHeaderItem(0,it);
+    itemsModel->setHorizontalHeaderItem(0,it);
     it = new QStandardItem("Страница");
-    lstModel->setHorizontalHeaderItem(1,it);
+    itemsModel->setHorizontalHeaderItem(1,it);
+    it = new QStandardItem("Страница(до)");
+    itemsModel->setHorizontalHeaderItem(2,it);
     ui->tableView_2->setModel(itemsModel);
 
     readAll("lst.txt");
@@ -46,6 +50,7 @@ MainWindow::~MainWindow()
 void MainWindow::addToLst(QString item)
 {
     QStandardItem* it = new QStandardItem(item);
+    //lstModel->setItem();
     lstModel->appendRow(it);
 }
 
@@ -83,9 +88,9 @@ void MainWindow::add()
 void MainWindow::proccessItem(QStandardItem *it)
 {
     if(it->column() == 0){
-
+        return;
     }
-    if(it->column() == 1){
+    if(it->column() > 0){
         QList<QStandardItem*> lst = itemsModel->findItems(lstModel->item(it->row())->text());
         if(it->text().toInt() > 0){
             if(lst.size() < 1){
@@ -94,10 +99,21 @@ void MainWindow::proccessItem(QStandardItem *it)
                 int row = newitem->row();
                 //newitem = new QStandardItem(it->text());
                 newitem = new QStandardItem();
-                newitem->setData(QVariant(it->text().toInt()), Qt::EditRole);
+                if(lstModel->item(it->row(),1))
+                    newitem->setData(QVariant(lstModel->item(it->row(),1)->text().toInt()),
+                                     Qt::EditRole);
                 itemsModel->setItem(row,1,newitem);
-            } else
-                itemsModel->item(lst.at(0)->row(),1)->setData(QVariant(it->text().toInt()), Qt::EditRole);
+                newitem = new QStandardItem();
+                if(lstModel->item(it->row(),2))
+                    newitem->setData(QVariant(lstModel->item(it->row(),2)->text().toInt()),
+                                     Qt::EditRole);
+                itemsModel->setItem(row,2,newitem);
+            } else {
+                if(lstModel->item(it->row(),1))
+                    itemsModel->item(lst.at(0)->row(),1)->setData(QVariant(lstModel->item(it->row(),1)->text().toInt()), Qt::EditRole);
+                if(lstModel->item(it->row(),2))
+                    itemsModel->item(lst.at(0)->row(),2)->setData(QVariant(lstModel->item(it->row(),2)->text().toInt()), Qt::EditRole);
+            }
 
             itemsModel->setSortRole(Qt::EditRole);
             itemsModel->sort(1);
@@ -114,7 +130,7 @@ void MainWindow::checkItem(QStandardItem *it)
     if(it->column() < 1)
         return;
 
-    if(it->text().toInt() < 1)
+    if(it->text().toInt() < 1 && it->column() == 1)
         itemsModel->removeRow(it->row());
     else
         it->setData(QVariant(it->text().toInt()), Qt::EditRole);
@@ -144,6 +160,8 @@ void MainWindow::print()
         html += itemsModel->item(row)->text();
         html += "</td><td>";
         html += itemsModel->item(row,1)->text();
+        if(itemsModel->item(row,2)->text().toInt() > 0)
+            html += '-'+itemsModel->item(row,2)->text();
         html += "</td></tr>\n";
     }
     html += end.readAll();
