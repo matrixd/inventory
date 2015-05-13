@@ -75,7 +75,7 @@ void MainWindow::saveAll()
         return;
 
     for(int row = 0; row < lstModel->rowCount(); row++)
-        fl.write(lstModel->text().toUtf8()+'\n');
+        fl.write(lstModel->item(row)->text().toUtf8()+'\n');
 
     fl.close();
 }
