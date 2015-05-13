@@ -74,8 +74,8 @@ void MainWindow::saveAll()
     if(!fl.open(QFile::WriteOnly))
         return;
 
-    for(int row = 0; row != itemsModel->rowCount(); row++)
-        fl.write(itemsModel->item(row)->text().toUtf8()+'\n');
+    for(int row = 0; row < lstModel->rowCount(); row++)
+        fl.write(it->text().toUtf8()+'\n');
 
     fl.close();
 }
