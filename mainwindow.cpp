@@ -9,6 +9,7 @@
 #include <QtPrintSupport/QPrinter>
 #include <QtPrintSupport/QPrintDialog>
 #include <QTextDocument>
+#include <QScrollBar>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -43,6 +44,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->plusButton, SIGNAL(clicked()), this, SLOT(plus()));
     connect(ui->clrButton, SIGNAL(clicked()), this, SLOT(clear()));
     connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(search(QString)));
+    connect(ui->tableView->verticalHeader(), SIGNAL(sectionMoved(int,int,int)), this, SLOT(moveItem(int,int,int)));
+
+    ui->tableView->verticalHeader()->setSectionsMovable(1);
+    ui->tableView->verticalHeader()->setUpdatesEnabled(1);
 }
 
 MainWindow::~MainWindow()
@@ -217,4 +222,9 @@ void MainWindow::search(QString qstr)
     if(lst.size() < 1)
         return;
     ui->tableView->selectRow(lst.at(0)->row());
+}
+
+void MainWindow::moveItem(int logical, int old, int n)
+{
+    lstModel->insertRow(n,lstModel->takeRow(old));
 }

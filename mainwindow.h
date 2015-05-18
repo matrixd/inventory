@@ -34,6 +34,7 @@ private slots:
     void plus();
     void clear();
     void search(QString qstr);
+    void moveItem(int logical, int old, int n);
 };
 
 #endif // MAINWINDOW_H
