@@ -31,6 +31,9 @@ private slots:
     void proccessItem(QStandardItem* it);
     void checkItem(QStandardItem* it);
     void print();
+    void plus();
+    void clear();
+    void search(QString qstr);
 };
 
 #endif // MAINWINDOW_H

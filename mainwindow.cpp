@@ -40,6 +40,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->printButton, SIGNAL(clicked()), this, SLOT(print()));
     connect(ui->saveButton, SIGNAL(clicked()), this, SLOT(saveAll()));
     connect(ui->lineEdit, SIGNAL(returnPressed()), this, SLOT(add()));
+    connect(ui->plusButton, SIGNAL(clicked()), this, SLOT(plus()));
+    connect(ui->clrButton, SIGNAL(clicked()), this, SLOT(clear()));
+    connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(search(QString)));
 }
 
 MainWindow::~MainWindow()
@@ -170,4 +173,48 @@ void MainWindow::print()
     QTextDocument *document = new QTextDocument();
     document->setHtml(html);
     document->print(&printer);
+}
+
+void MainWindow::plus()
+{
+    int srow = -1;
+    qDebug() << ui->tableView->selectionModel()->selectedRows().length();
+    if(ui->tableView->selectionModel()->selectedRows().length())
+        srow = ui->tableView->selectionModel()->selectedRows().at(0).row();
+    if(srow<0)
+        return;
+
+    QStandardItem* newitem = new QStandardItem(lstModel->item(srow)->text());
+    itemsModel->appendRow(newitem);
+    int row = newitem->row();
+    //newitem = new QStandardItem(it->text());
+    newitem = new QStandardItem();
+    if(lstModel->item(srow,1))
+        newitem->setData(QVariant(lstModel->item(srow,1)->text().toInt()),
+                         Qt::EditRole);
+    else
+        newitem->setData(QVariant(999),
+                         Qt::EditRole);
+    itemsModel->setItem(row,1,newitem);
+    newitem = new QStandardItem();
+    if(lstModel->item(srow,2))
+        newitem->setData(QVariant(lstModel->item(srow,2)->text().toInt()),
+                         Qt::EditRole);
+    else
+        newitem->setData(QVariant(0),
+                         Qt::EditRole);
+    itemsModel->setItem(row,2,newitem);
+}
+
+void MainWindow::clear()
+{
+    itemsModel->clear();
+}
+
+void MainWindow::search(QString qstr)
+{
+    QList<QStandardItem*> lst = lstModel->findItems(qstr, Qt::MatchContains);
+    if(lst.size() < 1)
+        return;
+    ui->tableView->selectRow(lst.at(0)->row());
 }

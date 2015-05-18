@@ -19,3 +19,6 @@ HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui \
     mainwindow.ui
+
+CONFIG += static
+CONFIG += static-libgcc
