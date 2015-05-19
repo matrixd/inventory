@@ -10,6 +10,7 @@
 #include <QtPrintSupport/QPrintDialog>
 #include <QTextDocument>
 #include <QScrollBar>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -92,6 +93,7 @@ void MainWindow::saveAll()
 void MainWindow::add()
 {
     addToLst(ui->lineEdit->text());
+    ui->tableView->selectRow(lstModel->rowCount()-1);
 }
 
 void MainWindow::proccessItem(QStandardItem *it)
@@ -103,13 +105,13 @@ void MainWindow::proccessItem(QStandardItem *it)
         QList<QStandardItem*> lst = itemsModel->findItems(lstModel->item(it->row())->text());
         if(it->text().toInt() > 0){
             if(lst.size() < 1){
+                //hack
                 itemsModel->blockSignals(1);
                 QStandardItem* newitem = new QStandardItem(lstModel->item(it->row(),0)->text());
                 itemsModel->appendRow(newitem);
                 int row = newitem->row();
                 qDebug() << newitem->column();
                 //newitem = new QStandardItem(it->text());
-                //hack
                 itemsModel->setItem(row,0,newitem);
                 newitem = new QStandardItem();
                 if(lstModel->item(it->row(),1))
@@ -203,44 +205,49 @@ void MainWindow::plus()
         srow = ui->tableView->selectionModel()->selectedRows().at(0).row();
     if(srow<0)
         return;
-
+    itemsModel->blockSignals(1);
     QStandardItem* newitem = new QStandardItem(lstModel->item(srow)->text());
     itemsModel->appendRow(newitem);
     int row = newitem->row();
     newitem = new QStandardItem();
-    if(lstModel->item(srow,1))
-        newitem->setData(QVariant(lstModel->item(srow,1)->text().toInt()),
+    if(row > 0)
+        newitem->setData(QVariant(itemsModel->item(row-1,1)->data(Qt::EditRole).toInt()+1),
                          Qt::EditRole);
     else
-        newitem->setData(QVariant(999),
-                         Qt::EditRole);
+        newitem->setData(QVariant(1),
+                             Qt::EditRole);
     itemsModel->setItem(row,1,newitem);
     newitem = new QStandardItem();
-    if(lstModel->item(srow,2))
-        newitem->setData(QVariant(lstModel->item(srow,2)->text().toInt()),
-                         Qt::EditRole);
-    else
-        newitem->setData(QVariant(0),
+    newitem->setData(QVariant(0),
                          Qt::EditRole);
     itemsModel->setItem(row,2,newitem);
+    itemsModel->blockSignals(0);
+    itemsModel->sort(1);
 }
 
 void MainWindow::clear()
 {
+    QMessageBox msgBox;
+    msgBox.setText("Cleat");
+    msgBox.setInformativeText("Do you really want to clear your table?");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    if(QMessageBox::No == msgBox.exec())
+        return;
     itemsModel->clear();
-    itemsModel->blockSignals(1);
+    lstModel->blockSignals(1);
     for(int row = 0; row != lstModel->rowCount(); row++){
         QStandardItem* it = new QStandardItem("0");
         lstModel->setItem(row,1,it);
         it = new QStandardItem("0");
         lstModel->setItem(row,2,it);
     }
-    itemsModel->blockSignals(0);
+    lstModel->blockSignals(0);
 }
 
 void MainWindow::search(QString qstr)
 {
-    QList<QStandardItem*> lst = lstModel->findItems(qstr, Qt::MatchContains);
+    QList<QStandardItem*> lst = lstModel->findItems(qstr, Qt::MatchStartsWith);
     if(lst.size() < 1)
         return;
     ui->tableView->selectRow(lst.at(0)->row());
