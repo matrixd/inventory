@@ -19,7 +19,10 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     lstModel = new QStandardItemModel(0,1,this);
+    lstSelModel = new QItemSelectionModel(lstModel);
     ui->treeView->setModel(lstModel);
+    //ui->treeView->sc
+    ui->treeView->setAutoExpandDelay(0);
 
     itemsModel = new QStandardItemModel(0,3,this);
     QStandardItem *it = new QStandardItem("Наименование");
@@ -82,12 +85,12 @@ void MainWindow::readAll(QString fname)
 
     QTextStream in(&fl);
     while(!in.atEnd()){
-        readTree(&in,0,0);
+        treeRead(&in,0,0);
     }
     fl.close();
 }
 
-void MainWindow::writeTree(QTextStream *out, QStandardItem *root, int lvl)
+void MainWindow::treeWrite(QTextStream *out, QStandardItem *root, int lvl)
 {
     for(int l = lvl; l; l--)
         *out << "    ";
@@ -95,11 +98,11 @@ void MainWindow::writeTree(QTextStream *out, QStandardItem *root, int lvl)
     qDebug() << out;
     if(root->hasChildren()){
         for(int crow = 0; crow < root->rowCount(); crow++)
-            writeTree(out, root->child(crow), lvl+1);
+            treeWrite(out, root->child(crow), lvl+1);
     }
 }
 
-void MainWindow::readTree(QTextStream *in, QStandardItem *root, int lvl)
+void MainWindow::treeRead(QTextStream *in, QStandardItem *root, int lvl)
 {
     if(in->atEnd())
         return;
@@ -108,22 +111,23 @@ void MainWindow::readTree(QTextStream *in, QStandardItem *root, int lvl)
     if(ref.count("    ") > lvl){
         QStandardItem *it = new QStandardItem(str.remove("\n").remove("    "));
         root->appendRow(it);
-        readTree(in, it, ref.count("    "));
+        treeRead(in, it, ref.count("    "));
         return;
     }
     if(ref.count("    ") == 0){
         QStandardItem *it = new QStandardItem(str.remove("\n"));
         lstModel->appendRow(it);
-        readTree(in, it, 0);
+        treeRead(in, it, 0);
         return;
     }
     if(ref.count("    ") == lvl){
         QStandardItem *it = new QStandardItem(str.remove("\n").remove("    "));
         root->appendRow(it);
-        readTree(in, root, lvl);
+        treeRead(in, root, lvl);
         return;
     }
 }
+
 
 void MainWindow::saveAll()
 {
@@ -133,7 +137,7 @@ void MainWindow::saveAll()
 
     QTextStream out(&fl);
     for(int row = 0; row < lstModel->rowCount(); row++){
-        writeTree(&out, lstModel->item(row),0);
+        treeWrite(&out, lstModel->item(row),0);
     }
 
     fl.close();
@@ -296,10 +300,15 @@ void MainWindow::clear()
 
 void MainWindow::search(QString qstr)
 {
-    QList<QStandardItem*> lst = lstModel->findItems(qstr, Qt::MatchStartsWith);
+    if(qstr.count() < 1)
+        return;
+    QList<QStandardItem*> lst = lstModel->findItems(qstr, Qt::MatchStartsWith | Qt::MatchRecursive);
     if(lst.size() < 1)
         return;
+    qDebug() << "1";
     //ui->tableView->selectRow(lst.at(0)->row());
+    ui->treeView->scrollTo(lst.at(0)->index());
+    ui->treeView->selectionModel()->select(lst.at(0)->index(), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
 void MainWindow::moveItem(int logical, int old, int n)
