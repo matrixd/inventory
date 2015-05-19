@@ -5,6 +5,7 @@
 #include <QList>
 #include <QStandardItemModel>
 #include <QStandardItem>
+#include <QTextStream>
 
 namespace Ui {
 class MainWindow;
@@ -24,7 +25,10 @@ private:
     QStandardItemModel* itemsModel;
 
     void addToLst(QString it);
+    //void addToLst(QString root, QString node);
     void readAll(QString fname);
+    void writeTree(QTextStream *out, QStandardItem* root, int lvl);
+    void readTree(QTextStream *in, QStandardItem* root, int lvl);
 private slots:
     void add();
     void saveAll();

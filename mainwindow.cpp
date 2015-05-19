@@ -11,23 +11,18 @@
 #include <QTextDocument>
 #include <QScrollBar>
 #include <QMessageBox>
+#include <QStringRef>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    lstModel = new QStandardItemModel(0,3,this);
-    QStandardItem* it = new QStandardItem("Наименование");
-    lstModel->setHorizontalHeaderItem(0,it);
-    it = new QStandardItem("Страница(с)");
-    lstModel->setHorizontalHeaderItem(1,it);
-    it = new QStandardItem("Страница(до)");
-    lstModel->setHorizontalHeaderItem(2,it);
-    ui->tableView->setModel(lstModel);
+    lstModel = new QStandardItemModel(0,1,this);
+    ui->treeView->setModel(lstModel);
 
     itemsModel = new QStandardItemModel(0,3,this);
-    it = new QStandardItem("Наименование");
+    QStandardItem *it = new QStandardItem("Наименование");
     itemsModel->setHorizontalHeaderItem(0,it);
     it = new QStandardItem("Страница");
     itemsModel->setHorizontalHeaderItem(1,it);
@@ -46,10 +41,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->plusButton, SIGNAL(clicked()), this, SLOT(plus()));
     connect(ui->clrButton, SIGNAL(clicked()), this, SLOT(clear()));
     connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(search(QString)));
-    connect(ui->tableView->verticalHeader(), SIGNAL(sectionMoved(int,int,int)), this, SLOT(moveItem(int,int,int)));
+    //connect(ui->treeView, SIGNAL())
 
-    ui->tableView->verticalHeader()->setSectionsMovable(1);
-    ui->tableView->verticalHeader()->setUpdatesEnabled(1);
+    //ui->tableView->verticalHeader()->setSectionsMovable(1);
+    //ui->tableView->verticalHeader()->setUpdatesEnabled(1);
 }
 
 MainWindow::~MainWindow()
@@ -64,6 +59,20 @@ void MainWindow::addToLst(QString item)
     lstModel->appendRow(it);
 }
 
+/*void MainWindow::addToLst(QString root, QString node)
+{
+    QList<QStandardItem*> lst =  lstModel->findItems(root);
+    if(lst.empty()){
+        QStandardItem* it = new QStandardItem(root);
+        lstModel->appendRow(it);
+        QStandardItem* node = new QStandardItem(node);
+        it->appendRow(node);
+    } else {
+        QStandardItem* it = new QStandardItem(node);
+        lst.at(0)->appendRow(it);
+    }
+}*/
+
 void MainWindow::readAll(QString fname)
 {
     QFile fl(fname, this);
@@ -71,11 +80,49 @@ void MainWindow::readAll(QString fname)
         return;
     }
 
-    while((!fl.atEnd())){
-        QByteArray str = fl.readLine();
-        addToLst(QString(str).remove("\n"));
+    QTextStream in(&fl);
+    while(!in.atEnd()){
+        readTree(&in,0,0);
     }
     fl.close();
+}
+
+void MainWindow::writeTree(QTextStream *out, QStandardItem *root, int lvl)
+{
+    for(int l = lvl; l; l--)
+        *out << "    ";
+    *out << root->text() << "\n";
+    qDebug() << out;
+    if(root->hasChildren()){
+        for(int crow = 0; crow < root->rowCount(); crow++)
+            writeTree(out, root->child(crow), lvl+1);
+    }
+}
+
+void MainWindow::readTree(QTextStream *in, QStandardItem *root, int lvl)
+{
+    if(in->atEnd())
+        return;
+    QString str = in->readLine();
+    QStringRef ref(&str);
+    if(ref.count("    ") > lvl){
+        QStandardItem *it = new QStandardItem(str.remove("\n").remove("    "));
+        root->appendRow(it);
+        readTree(in, it, ref.count("    "));
+        return;
+    }
+    if(ref.count("    ") == 0){
+        QStandardItem *it = new QStandardItem(str.remove("\n"));
+        lstModel->appendRow(it);
+        readTree(in, it, 0);
+        return;
+    }
+    if(ref.count("    ") == lvl){
+        QStandardItem *it = new QStandardItem(str.remove("\n").remove("    "));
+        root->appendRow(it);
+        readTree(in, root, lvl);
+        return;
+    }
 }
 
 void MainWindow::saveAll()
@@ -84,8 +131,10 @@ void MainWindow::saveAll()
     if(!fl.open(QFile::WriteOnly))
         return;
 
-    for(int row = 0; row < lstModel->rowCount(); row++)
-        fl.write(lstModel->item(row)->text().toUtf8()+'\n');
+    QTextStream out(&fl);
+    for(int row = 0; row < lstModel->rowCount(); row++){
+        writeTree(&out, lstModel->item(row),0);
+    }
 
     fl.close();
 }
@@ -93,7 +142,7 @@ void MainWindow::saveAll()
 void MainWindow::add()
 {
     addToLst(ui->lineEdit->text());
-    ui->tableView->selectRow(lstModel->rowCount()-1);
+    //ui->treeView->selectRow(lstModel->rowCount()-1);
 }
 
 void MainWindow::proccessItem(QStandardItem *it)
@@ -200,9 +249,9 @@ void MainWindow::print()
 void MainWindow::plus()
 {
     int srow = -1;
-    qDebug() << ui->tableView->selectionModel()->selectedRows().length();
+    /*qDebug() << ui->tableView->selectionModel()->selectedRows().length();
     if(ui->tableView->selectionModel()->selectedRows().length())
-        srow = ui->tableView->selectionModel()->selectedRows().at(0).row();
+        srow = ui->tableView->selectionModel()->selectedRows().at(0).row();*/
     if(srow<0)
         return;
     itemsModel->blockSignals(1);
@@ -250,7 +299,7 @@ void MainWindow::search(QString qstr)
     QList<QStandardItem*> lst = lstModel->findItems(qstr, Qt::MatchStartsWith);
     if(lst.size() < 1)
         return;
-    ui->tableView->selectRow(lst.at(0)->row());
+    //ui->tableView->selectRow(lst.at(0)->row());
 }
 
 void MainWindow::moveItem(int logical, int old, int n)
