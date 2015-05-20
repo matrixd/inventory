@@ -44,10 +44,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->plusButton, SIGNAL(clicked()), this, SLOT(plus()));
     connect(ui->clrButton, SIGNAL(clicked()), this, SLOT(clear()));
     connect(ui->lineEdit, SIGNAL(textChanged(QString)), this, SLOT(search(QString)));
-    //connect(ui->treeView, SIGNAL())
-
-    //ui->tableView->verticalHeader()->setSectionsMovable(1);
-    //ui->tableView->verticalHeader()->setUpdatesEnabled(1);
 }
 
 MainWindow::~MainWindow()
@@ -55,26 +51,12 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::addToLst(QString item)
+QStandardItem* MainWindow::addToLst(QString item)
 {
     QStandardItem* it = new QStandardItem(item);
-    //lstModel->setItem();
     lstModel->appendRow(it);
+    return it;
 }
-
-/*void MainWindow::addToLst(QString root, QString node)
-{
-    QList<QStandardItem*> lst =  lstModel->findItems(root);
-    if(lst.empty()){
-        QStandardItem* it = new QStandardItem(root);
-        lstModel->appendRow(it);
-        QStandardItem* node = new QStandardItem(node);
-        it->appendRow(node);
-    } else {
-        QStandardItem* it = new QStandardItem(node);
-        lst.at(0)->appendRow(it);
-    }
-}*/
 
 void MainWindow::readAll(QString fname)
 {
@@ -145,8 +127,9 @@ void MainWindow::saveAll()
 
 void MainWindow::add()
 {
-    addToLst(ui->lineEdit->text());
-    //ui->treeView->selectRow(lstModel->rowCount()-1);
+    QStandardItem* it = addToLst(ui->lineEdit->text());
+    ui->treeView->scrollTo(it->index());
+    ui->treeView->selectionModel()->select(it->index(), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }
 
 void MainWindow::proccessItem(QStandardItem *it)
@@ -164,7 +147,6 @@ void MainWindow::proccessItem(QStandardItem *it)
                 itemsModel->appendRow(newitem);
                 int row = newitem->row();
                 qDebug() << newitem->column();
-                //newitem = new QStandardItem(it->text());
                 itemsModel->setItem(row,0,newitem);
                 newitem = new QStandardItem();
                 if(lstModel->item(it->row(),1))
@@ -252,14 +234,14 @@ void MainWindow::print()
 
 void MainWindow::plus()
 {
-    int srow = -1;
-    /*qDebug() << ui->tableView->selectionModel()->selectedRows().length();
-    if(ui->tableView->selectionModel()->selectedRows().length())
-        srow = ui->tableView->selectionModel()->selectedRows().at(0).row();*/
-    if(srow<0)
-        return;
+    QModelIndex srow;
+    if(ui->treeView->selectionModel()->selectedIndexes().length())
+        srow = ui->treeView->selectionModel()->selectedIndexes().at(0);
+    //if(srow)
+    //    return;
+    qDebug() << srow;
     itemsModel->blockSignals(1);
-    QStandardItem* newitem = new QStandardItem(lstModel->item(srow)->text());
+    QStandardItem* newitem = new QStandardItem(srow.data().toString());
     itemsModel->appendRow(newitem);
     int row = newitem->row();
     newitem = new QStandardItem();
@@ -288,14 +270,6 @@ void MainWindow::clear()
     if(QMessageBox::No == msgBox.exec())
         return;
     itemsModel->clear();
-    lstModel->blockSignals(1);
-    for(int row = 0; row != lstModel->rowCount(); row++){
-        QStandardItem* it = new QStandardItem("0");
-        lstModel->setItem(row,1,it);
-        it = new QStandardItem("0");
-        lstModel->setItem(row,2,it);
-    }
-    lstModel->blockSignals(0);
 }
 
 void MainWindow::search(QString qstr)
@@ -306,7 +280,6 @@ void MainWindow::search(QString qstr)
     if(lst.size() < 1)
         return;
     qDebug() << "1";
-    //ui->tableView->selectRow(lst.at(0)->row());
     ui->treeView->scrollTo(lst.at(0)->index());
     ui->treeView->selectionModel()->select(lst.at(0)->index(), QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
 }

@@ -26,8 +26,7 @@ private:
     QStandardItemModel* itemsModel;
     QItemSelectionModel *lstSelModel;
 
-    void addToLst(QString it);
-    //void addToLst(QString root, QString node);
+    QStandardItem* addToLst(QString it);
     void readAll(QString fname);
     void treeWrite(QTextStream *out, QStandardItem* root, int lvl);
     void treeRead(QTextStream *in, QStandardItem* root, int lvl);
